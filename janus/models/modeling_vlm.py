@@ -243,7 +243,14 @@ class MultiModalityCausalLM(MultiModalityPreTrainedModel):
         bs, n = pixel_values.shape[0:2]
         images = rearrange(pixel_values, "b n c h w -> (b n) c h w")
         # [b x n, T2, D]
-        images_embeds = self.aligner(self.vision_model(images))
+        
+        # start = torch.cuda.Event(enable_timing=True)
+        # end = torch.cuda.Event(enable_timing=True)
+        # start.record()
+        images_embeds = self.aligner(self.vision_model(images)) # CORE: Image Encoder, Projector
+        # end.record()
+        # torch.cuda.synchronize()
+        # print(f"Image Encoder Time: {start.elapsed_time(end)/1000:.6f} s")
 
         # [b x n, T2, D] -> [b, n x T2, D]
         images_embeds = rearrange(images_embeds, "(b n) t d -> b (n t) d", b=bs, n=n)

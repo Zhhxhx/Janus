@@ -426,7 +426,7 @@ class Upsample(nn.Module):
             x = self.conv(x)
         return x
 
-
+# 下采样: 大小减半 
 class Downsample(nn.Module):
     def __init__(self, in_channels, with_conv):
         super().__init__()

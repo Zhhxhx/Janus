@@ -218,7 +218,8 @@ class VLChatProcessor(ProcessorMixin):
         input_ids: torch.LongTensor,
     ):
         """
-
+        Add image tokens to the input_ids at the specified indices. Operations
+        are performed on CPU.
         Args:
             image_indices (List[int]): [index_0, index_1, ..., index_j]
             input_ids (torch.LongTensor): [N]
@@ -241,11 +242,14 @@ class VLChatProcessor(ProcessorMixin):
             input_slices.append(input_ids[start:end])
 
             # add boi, image tokens, eoi and set the mask as False
+            # LXH: 在图像 token 序列部分的最开始插入 start id
             input_slices.append(self.image_start_id * torch.ones((1), dtype=torch.long))
+            # LXH: 使用统一的 image_id 占位，同时要求 image encoder 的输出 token 数量相同，所以这里的占位的 token 的数量是固定的
             input_slices.append(
                 self.image_id * torch.ones((self.num_image_tokens,), dtype=torch.long)
             )
-            input_slices.append(self.image_end_id * torch.ones((1), dtype=torch.long))
+            # LXH: 在图像 token 序列部分的最后插入 end id
+            input_slices.append(self.image_end_id * torch.ones((1), dtype=torch.long)) 
             start = index + 1
 
         # the left part
@@ -284,6 +288,8 @@ class VLChatProcessor(ProcessorMixin):
         assert (
             prompt is None or conversations is None
         ), "prompt and conversations cannot be used at the same time."
+        start = torch.cuda.Event(enable_timing=True)
+        end = torch.cuda.Event(enable_timing=True)
 
         if prompt is None:
             # apply sft format
@@ -295,8 +301,9 @@ class VLChatProcessor(ProcessorMixin):
         else:
             sft_format = prompt
 
-        # tokenize
-        input_ids = self.tokenizer.encode(sft_format)
+        # tokenize 
+        # LXH: id stands for the token's id pointing to the vocabulary board's entry (vocab)
+        input_ids = self.tokenizer.encode(sft_format) # CORE: Text Tokenizer
         input_ids = torch.LongTensor(input_ids)
 
         # add image tokens to the input_ids
@@ -344,10 +351,15 @@ class VLChatProcessor(ProcessorMixin):
                 - image_id (int): the id of the image token
                 - num_image_tokens (List[int]): the number of image tokens
         """
-
+        start = torch.cuda.Event(enable_timing=True)
+        end = torch.cuda.Event(enable_timing=True)
+        start.record()
         prepare = self.process_one(
             prompt=prompt, conversations=conversations, images=images
         )
+        end.record()
+        torch.cuda.synchronize()
+        print(f"Image Encoder Time: {start.elapsed_time(end)/1000:.6f} s")
 
         if force_batchify:
             prepare = self.batchify([prepare])

@@ -23,8 +23,12 @@ from transformers import AutoModelForCausalLM
 from janus.models import MultiModalityCausalLM, VLChatProcessor
 from janus.utils.io import load_pil_images
 
+import time
+
 # specify the path to the model
-model_path = "deepseek-ai/Janus-1.3B"
+# model_path = "deepseek-ai/Janus-1.3B"
+# model_path = "deepseek-ai/Janus-Pro-1B"
+model_path = "./Janus-Pro-7B"
 vl_chat_processor: VLChatProcessor = VLChatProcessor.from_pretrained(model_path)
 tokenizer = vl_chat_processor.tokenizer
 
@@ -41,15 +45,32 @@ conversation = [
     },
     {"role": "Assistant", "content": ""},
 ]
+# conversation = [
+#     {
+#         "role": "User",
+#         "content": "<image_placeholder>\n",
+#         "images": ["images/equation.png"],
+#     },
+#     {"role": "Assistant", "content": ""},
+# ]
+start = torch.cuda.Event(enable_timing=True)
+end = torch.cuda.Event(enable_timing=True)
 
 # load images and prepare for inputs
+
 pil_images = load_pil_images(conversation)
 prepare_inputs = vl_chat_processor(
     conversations=conversation, images=pil_images, force_batchify=True
 ).to(vl_gpt.device)
 
 # # run image encoder to get the image embeddings
+start.record()
+
 inputs_embeds = vl_gpt.prepare_inputs_embeds(**prepare_inputs)
+
+end.record()
+torch.cuda.synchronize()
+print(f"GPU Time: {start.elapsed_time(end)/1000:.6f} s")
 
 # # run the model to get the response
 outputs = vl_gpt.language_model.generate(
