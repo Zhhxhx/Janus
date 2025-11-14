@@ -424,3 +424,4 @@ generated_samples/
 env.sh
 Janus*/
 extract_param.py
+logs/

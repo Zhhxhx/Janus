@@ -72,6 +72,8 @@ end.record()
 torch.cuda.synchronize()
 print(f"GPU Time: {start.elapsed_time(end)/1000:.6f} s")
 
+print(inputs_embeds.shape)
+
 # # run the model to get the response
 outputs = vl_gpt.language_model.generate(
     inputs_embeds=inputs_embeds,

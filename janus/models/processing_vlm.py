@@ -288,8 +288,6 @@ class VLChatProcessor(ProcessorMixin):
         assert (
             prompt is None or conversations is None
         ), "prompt and conversations cannot be used at the same time."
-        start = torch.cuda.Event(enable_timing=True)
-        end = torch.cuda.Event(enable_timing=True)
 
         if prompt is None:
             # apply sft format
@@ -351,18 +349,22 @@ class VLChatProcessor(ProcessorMixin):
                 - image_id (int): the id of the image token
                 - num_image_tokens (List[int]): the number of image tokens
         """
-        start = torch.cuda.Event(enable_timing=True)
-        end = torch.cuda.Event(enable_timing=True)
-        start.record()
+        # start = [torch.cuda.Event(enable_timing=True) for _ in range(2)]
+        # end = [torch.cuda.Event(enable_timing=True) for _ in range(2)]
+        # start[0].record()
         prepare = self.process_one(
             prompt=prompt, conversations=conversations, images=images
         )
-        end.record()
-        torch.cuda.synchronize()
-        print(f"Image Encoder Time: {start.elapsed_time(end)/1000:.6f} s")
+        # end[0].record()
+        # torch.cuda.synchronize()
+        # print(f"Text Encoding Time: {start[0].elapsed_time(end[0])/1000:.6f} s")
 
         if force_batchify:
+            # start[1].record()
             prepare = self.batchify([prepare])
+            # end[1].record()
+            # torch.cuda.synchronize()
+            # print(f"Batchify Time: {start[1].elapsed_time(end[1])/1000:.6f} s")
 
         return prepare
 

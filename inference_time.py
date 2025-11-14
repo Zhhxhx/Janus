@@ -51,7 +51,8 @@ conversation_und = [
 conversation_gen = [
     {
         "role": "User",
-        "content": "Give a picture of lovely Chinese Li Hua Cat.",
+        # "content": "Give a picture of lovely Chinese Li Hua Cat.",
+        "content": "Give a picture of a young woman with long, flowing hair, wearing a vintage sundress, standing in a field of wildflowers. She has a gentle smile, and the sunlight creates a soft, ethereal glow around her. The image is styled in a watercolor painting format, with delicate brushstrokes and pastel colors.",
     },
     {"role": "Assistant", "content": ""},
 ]
@@ -218,7 +219,7 @@ def generate(
 
 @torch.inference_mode()
 def measure_gen_inference_time():
-  nr_run = 5
+  nr_run = 10
   parallel_size: int = 16
   img_size: int = 384 
   patch_size: int = 16
