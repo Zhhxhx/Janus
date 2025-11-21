@@ -26,13 +26,18 @@ from transformers import (
     AutoModelForCausalLM,
     PreTrainedModel,
     LlamaConfig,
-    LlamaForCausalLM,
+    # LlamaForCausalLM,
 )
 from transformers.models.llama.modeling_llama import LlamaRMSNorm
 from janus.janusflow.models.clip_encoder import CLIPVisionTower
 from janus.janusflow.models.uvit import ShallowUViTEncoder, ShallowUViTDecoder
 import torch.nn as nn
 
+from janus.janusflow.argus.attention import TrickAttention
+from janus.janusflow.argus.mlp import MLPArgs
+from janus.janusflow.argus.modeling_llama import LlamaForCausalLM
+
+from typing import Any, Dict, Optional
 
 def model_name_to_cls(cls_name):
 
@@ -131,7 +136,7 @@ class MultiModalityPreTrainedModel(PreTrainedModel):
 
 class MultiModalityCausalLM(MultiModalityPreTrainedModel):
 
-    def __init__(self, config: MultiModalityConfig):
+    def __init__(self, config: MultiModalityConfig, base_attn: TrickAttention, mlp_args: MLPArgs):
         super().__init__(config)
 
         # vision understanding encoder
@@ -160,13 +165,32 @@ class MultiModalityCausalLM(MultiModalityPreTrainedModel):
 
         # language model
         language_config = config.language_config
-        self.language_model = LlamaForCausalLM(language_config)
+        self.language_model = LlamaForCausalLM(language_config, base_attn=base_attn, mlp_args=mlp_args)
 
         # vision generation decoder aligner
         self.vision_gen_dec_aligner_norm = LlamaRMSNorm(
             2048, eps=language_config.rms_norm_eps
         )
         self.vision_gen_dec_aligner = nn.Linear(2048, 768, bias=True)
+        
+    def _prepare_model_kwargs(self, inputs: Optional[Dict[str, Any]] = None, **kwargs) -> Dict[str, Any]:
+        """
+        重写此方法以接受自定义的 `mode` 参数。
+        """
+        # 1. 调用父类的方法，获取标准的 model_kwargs
+        #    这会处理好 `inputs`, `use_cache` 等标准参数
+        model_kwargs = super()._prepare_model_kwargs(inputs, **kwargs)
+
+        # 2. 从 kwargs 中安全地提取你的自定义参数，并将其添加到 model_kwargs 中
+        #    这样，'mode' 就被正式地加入了传递给 forward 方法的参数字典
+        if "mode" in kwargs:
+            model_kwargs["mode"] = kwargs["mode"]
+        
+        # 你可以在这里添加其他任何你需要的自定义参数
+        # if "my_other_param" in kwargs:
+        #     model_kwargs["my_other_param"] = kwargs["my_other_param"]
+
+        return model_kwargs
 
     def prepare_inputs_embeds(
         self,

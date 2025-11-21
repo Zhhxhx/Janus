@@ -425,3 +425,8 @@ env.sh
 Janus*/
 extract_param.py
 logs/
+generated*
+outputs/
+eval/vlm/data
+eval/geneval/model/
+mmdetection/
