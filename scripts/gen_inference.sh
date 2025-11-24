@@ -21,9 +21,9 @@ export PYTHONPATH=.
 export CUDA_VISIBLE_DEVICES=7
 
 threshold=4e-3
-# attn_backend="naive_sparse_quant_cfg"
+attn_backend="naive_sparse_quant_cfg"
 # attn_backend="naive"
-attn_backend="naive_sdma"
+# attn_backend="naive_sdma"
 sparse_gsize=16
 # mlp_backend="argus"
 # mlp_backend="flightvgm"

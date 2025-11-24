@@ -26,7 +26,7 @@ from transformers import (
     AutoModelForCausalLM,
     PreTrainedModel,
     LlamaConfig,
-    # LlamaForCausalLM,
+    LlamaForCausalLM,
 )
 from transformers.models.llama.modeling_llama import LlamaRMSNorm
 from janus.janusflow.models.clip_encoder import CLIPVisionTower

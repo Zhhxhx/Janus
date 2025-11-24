@@ -140,6 +140,7 @@ class TrickAttention:
 			attn_weights[:, :, self_range[0]:self_range[1], self_range[0]:self_range[1]],
 		)
 		if attention_mask is not None:
+			print(f"attention mask {attention_mask}")
 			causal_mask = attention_mask[:, :, :, : key_states.shape[-2]]
 			causal_mask = causal_mask.expand_as(attn_weights)
 			attn_weights[~causal_mask] = float('-inf')
